@@ -1,0 +1,540 @@
+---
+title:  Schematic File Format
+weight: 45
+---
+
+:TOC:
+
+.Summary The s-expression schematic file format.
+<!--more-->
+
+
+== Introduction
+
+This documents the s-expression schematic file format for all versions of KiCad from 6.0.
+
+* Schematic files use the `.kicad_sch` extension.
+
+
+=== Instance Path
+
+Because KiCad schematics can support multiple instances of the same schematic using hierarchical
+sheets, information for shared sheets is done using paths consisting of the
+xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifiers]
+that represent the hierarchical path for the sheet the instance separated by a forward slash
+('/').  A typical instance path would look like:
+
+```
+"/00000000-0000-0000-0000-00004b3a13a4/00000000-0000-0000-0000-00004b617b88"
+```
+
+WARNING: The first identifier must be the root <<_hierarchical_sheet_section, sheet>> which is
+         the same identifier as the root schematic file.
+
+
+=== Label and Pin Shapes
+
+The table below defines the valid shape tokens <<_global_label_section,global labels>>,
+<<_hierarchical_label_section,hierarchical labels>>, and
+<<_hierarchical_sheet_pin_definition, hierarchical sheet pins>>.
+
+[options="header",cols="25%,50%,^25%",]
+|===
+|Token
+|Definition
+|Image
+
+|input
+|Label or pin is an input shape
+|image:images/label-shape-input.png[images/label_shape_input]
+
+|output
+|Label or pin is an output shape
+|image:images/label-shape-output.png[images/label_shape_output]
+
+|bidirectional
+|Label or pin is a bidirectional shape
+|image:images/label-shape-bidirectional.png[images/label_shape_bidirectional]
+
+|tri_state
+|Label or pin is a tri-state shape
+|image:images/label-shape-tristate.png[images/label_shape_tristate]
+
+|passive
+|Label or pin is a tri-state shape
+|image:images/label-shape-passive.png[images/label_shape_passive]
+|===
+
+
+== Layout
+
+A schematic file includes the following sections:
+
+* <<_header_section,Header>>
+* <<_unique_identifier_section,Unique Identifier>>
+* xref:../sexpr-intro/index.adoc#_page_settings[Page Settings]
+* xref:../sexpr-intro/index.adoc#_title_block[Title Block Section]
+* <<_library_symbol_section,Symbol Library Symbol Definition>>
+* <<_junction_section,Junction Section>>
+* <<_no_connect_section,No Connect Section>>
+* <<_wire_and_bus_section,Wire and Bus Section>>
+* <<_image_section,Image Section>>
+* <<_graphical_line_section,Graphical Line Section>>
+* <<_graphical_text_section,Graphical Text Section>>
+* <<_local_label_section,Local Label Section>>
+* <<_global_label_section,Global Label Section>>
+* <<_symbol_section,Symbol Section>>
+* <<_hierarchical_sheet_section,Hierarchical Sheet Section>>
+* <<_root_sheet_instance_section,Root Sheet Instance Section>>
+
+
+== Header Section
+
+The `kicad_sch` token indicates that it is KiCad schematic file.  This section is required.
+
+NOTE: Third party scripts should not use `eeschema` as the generator identifier.  Please use
+      some other identifier so that bugs introduced by third party generators are not confused
+      with a schematic file created by KiCad.
+
+```
+(kicad_sch
+  (version VERSION)                                             <1>
+  (generator GENERATOR)                                         <2>
+
+  ;; contents of the schematic file...                          <3>
+)
+```
+
+<1> The `version` token attribute defines the schematic version using the YYYYMMDD date format.
+<2> The `generator` token attribute defines the program used to write the file.
+<3> The schematic sections go here.
+
+
+== Unique Identifier Section
+
+The `uuid` token defines the globally unique identifier that identifies the schematic.
+
+```
+  UNIQUE_IDENTIFIER                                             <1>
+```
+
+NOTE Only the root schematic identifier is used as the virtual root sheet identifier.  All other
+     identifiers are belong to <<_hierarchical_sheet_section,hierarchical sheet objects>>.
+
+<1> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the schematic file.  This identifier is used when creating hierarchical sheet paths which
+    are used to reference symbol instance data and
+    <<_hierarchical_sheet_instance_section,hierarchical sheet instance>> information.
+
+
+== Library Symbol Section
+
+The `lib_symbols` token defines a symbol library contain all of the symbols used in the
+schematic.
+
+```
+  (lib_symbols
+    SYMBOL_DEFINITIONS...                                       <1>
+  )
+```
+
+<1> A list of 0 or more xref:../sexpr-intro/index.adoc#_symbols[symbols].
+
+
+== Junction Section
+
+The `junction` token defines a junction in the schematic.  The junction section will not exist
+if there are no junctions in the schematic.
+
+```
+  (junction
+    POSITION_IDENTIFIER                                         <1>
+    (diameter DIAMETER)                                         <2>
+    (color R G B A)                                             <3>
+    UNIQUE_IDENTIFIER                                           <4>
+  )
+```
+
+<1> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates] of the junction.
+<2> The `diameter` token attribute defines the DIAMETER of the junction.  A diameter of 0 is
+    the default diameter in the system settings.
+<3> The `color` token attributes define the Red, Green, Blue, and Alpha transparency of the
+    junction.  If all four attributes are 0, the default junction color is used.
+<4> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the junction.
+
+
+== No Connect Section
+
+The `no_connect` token defines a unused pin connection in the schematic.  The no connect section
+will not exist if there are not any no connects in the schematic.
+
+```
+  (no_connect
+    POSITION_IDENTIFIER                                         <1>
+    UNIQUE_IDENTIFIER                                           <2>
+  )
+```
+
+<1> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates] of the no connect.
+<2> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the no connect.
+
+
+== Bus Entry Section
+
+The `bus_entry` token defines a bus entry in the schematic.  The bus entry section will not
+exist if there are no bus entries in the schematic.
+
+```
+  (bus_entry
+    POSITION_IDENTIFIER                                         <1>
+    (size X Y)                                                  <2>
+    STROKE_DEFINITION                                           <3>
+    UNIQUE_IDENTIFIER                                           <4>
+  )
+```
+
+<1> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates] of the bus entry.
+<2> The `size` token attributes define the X and Y distance of the end point from the position
+    of the bus entry.
+<3> The STROKE_DEFINITION defines how the bus entry
+    xref:../sexpr-intro/index.adoc#_stroke_definition[is drawn].
+<4> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the bus entry.
+
+
+== Wire and Bus Section
+
+The `wire` and `bus` tokens define wires and buses in the schematic.  This section will not
+exist if there are no wires or buses in the schematic.
+
+```
+  (wire | bus
+    COORDINATE_POINT_LIST                                       <1>
+    STROKE_DEFINITION                                           <2>
+    UNIQUE_IDENTIFIER                                           <3>
+  )
+```
+
+<1> The COORDINATE_POINT_LIST defines the list of
+    xref:../sexpr-intro/index.adoc#_coordinate_point_list[X and Y coordinates] of start and end
+    points of the wire or bus.
+<2> The STROKE_DEFINITION defines how the wire or bus
+    xref:../sexpr-intro/index.adoc#_stroke_definition[is drawn].
+<3> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the wire or bus.
+
+
+== Image Section
+See common xref:../sexpr-intro/index.adoc#_images[Images] section.
+
+
+== Graphical Line Section
+
+The `polyline` token defines one or more lines that may or may not represent a polygon.  This
+section will not exist if there are no lines in the schematic.
+
+```
+  (polyline
+    COORDINATE_POINT_LIST                                       <1>
+    STROKE_DEFINITION                                           <2>
+    UNIQUE_IDENTIFIER                                           <3>
+  )
+```
+
+<1> The COORDINATE_POINT_LIST defines the list of
+    xref:../sexpr-intro/index.adoc#_coordinate_point_list[X/Y coordinates] of to draw line(s)
+    between.  A minimum of two points is required.
+<2> The STROKE_DEFINITION defines how the graphical line
+    xref:../sexpr-intro/index.adoc#_stroke_definition[is drawn]..
+<3> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the graphical line.
+
+
+== Graphical Text Section
+
+The `text` token defines graphical text in a schematic.
+
+```
+  (text
+    "TEXT"                                                      <1>
+    POSITION_IDENTIFIER                                         <2>
+    TEXT_EFFECTS                                                <3>
+    UNIQUE_IDENTIFIER                                           <4>
+  )
+```
+
+<1> The TEXT is a quoted string that defines the text.
+<2> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates and rotation angle]
+    of the text.
+<3> The TEXT_EFFECTS section defines how the
+    xref:../sexpr-intro/index.adoc#_text_effects[text is drawn].
+<4> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the graphical text.
+
+
+== Local Label Section
+
+The `label` token defines an wire or bus label name in a schematic.
+
+```
+  (label
+    "TEXT"                                                      <1>
+    POSITION_IDENTIFIER                                         <2>
+    TEXT_EFFECTS                                                <3>
+    UNIQUE_IDENTIFIER                                           <4>
+  )
+```
+
+<1> The TEXT is a quoted string that defines the label.
+<2> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates and rotation angle]
+    of the label.
+<3> The TEXT_EFFECTS section defines how the
+    xref:../sexpr-intro/index.adoc#_text_effects[label text is drawn].
+<4> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the label.
+
+
+== Global Label Section
+
+The `global_label` token defines a label name that is visible across all schematics in
+a design.  This section will not exist if no global labels are defined in the schematic.
+
+```
+  (global_label
+    "TEXT"                                                      <1>
+    (shape SHAPE)                                               <2>
+    [(fields_autoplaced)]                                       <3>
+    POSITION_IDENTIFIER                                         <4>
+    TEXT_EFFECTS                                                <5>
+    UNIQUE_IDENTIFIER                                           <6>
+    PROPERTIES                                                  <7>
+  )
+```
+
+<1> The TEXT is a quoted string that defines the global label.
+<2> The `shape` token attribute defines the way the global label is drawn.  See table below
+    for global label shapes.
+<3> The optional `fields_autoplaced` is a flag that indicates that any PROPERTIES associated
+    with the global label have been place automatically.
+<4> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates and rotation angle]
+    of the label.
+<5> The TEXT_EFFECTS section defines how the
+    xref:../sexpr-intro/index.adoc#_text_effects[global label text is drawn].
+<6> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the global label.
+<7> The PROPERTIES section defines the
+    xref:../sexpr-intro/index.adoc#_symbol_property[properties] of the global label.
+    Currently, the only supported property is the inter-sheet reference.
+
+
+== Hierarchical Label Section
+
+The `hierarchical_label` section defines labels that are used by
+<<_hierarchical_sheet_section,hierarchical sheets>> to define connections between sheet in
+hierarchical designs.  This section will not exist if no global labels are defined in the
+schematic.
+
+```
+  (hierarchical_label
+    "TEXT"                                                      <1>
+    (shape SHAPE)                                               <2>
+    POSITION_IDENTIFIER                                         <3>
+    TEXT_EFFECTS                                                <4>
+    UNIQUE_IDENTIFIER                                           <5>
+  )
+```
+
+<1> The TEXT is a quoted string that defines the hierarchical label.
+<2> The `shape` token attribute defines the way the hierarchical label is drawn.  See table below
+    for hierarchical label shapes.
+<3> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates and rotation angle]
+    of the label.
+<4> The TEXT_EFFECTS section defines how the
+    xref:../sexpr-intro/index.adoc#_text_effects[hierarchical label text is drawn].
+<5> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the hierarchical label.
+
+
+== Symbol Section
+
+The `symbol` token in the symbol section of the schematic defines an instance of a symbol from
+<<_library_symbol_section,the library symbol section>> of the schematic.
+
+```
+  (symbol
+    "LIBRARY_IDENTIFIER"                                        <1>
+    POSITION_IDENTIFIER                                         <2>
+    (unit UNIT)                                                 <3>
+    (in_bom yes|no)                                             <4>
+    (on_board yes|no)                                           <5>
+    UNIQUE_IDENTIFIER                                           <6>
+    PROPERTIES                                                  <7>
+    (pin "1" (uuid e148648c-6605-4af1-832a-31eaf808c2f8))       <8>
+    (instances                                                  <9>
+      (project "PROJECT_NAME"                                   <10>
+        (path "PATH_INSTANCE"                                   <11>
+          (reference "REFERENCE")                               <12>
+          (unit UNIT)                                           <13>
+        )
+
+        ;; Optional symbol instances for this `project`...
+      )
+
+      ;; Optional symbol instances for other `project`...
+    )
+  )
+```
+
+<1> The xref:../sexpr-intro/index.adoc#_library_identifier[LIBRARY_IDENTIFIER] defines which
+    symbol in the <<_library_symbol_section,library symbol section>> of the schematic that
+    this schematic symbol references.
+<2> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates and angle of rotation]
+    of the symbol.
+<3> The `unit` token attribute defines which unit in the symbol library definition that the
+    schematic symbol represents.
+<4> The `in_bom` token attribute determines whether the schematic symbol appears in any bill of
+    materials output.
+<5> The `on_board` token attribute determines if the footprint associated with the symbol is
+    exported to the board via the netlist.
+<6> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the symbol.  This is used to map the symbol the
+    <<_symbol_instance_section,symbol instance information>>.
+<7> The PROPERTIES section defines a list of
+    xref:../sexpr-intro/index.adoc#_symbol_property[symbol properties] of the schematic symbol.
+<8> The `pin` token attributes define ???.
+<9> The `instances` token defines a list of symbol instances grouped by project.  Every symbol
+    will have a least one instance.
+<10> The `project` token attribute defines the name of the project to which the instance data
+     belongs.  There can be instance data from other project when schematics are shared across
+     multiple projects.  The projects will be sorted by the `PROJECT_NAME` in alphabetical order.
+<11> The `path` token attribute is the <<_instance_path,path to the sheet instance>> for the
+     instance data.
+<12> The `reference` token attribute is a string that defines the reference designator for the
+     symbol instance.
+<13> The `unit` token attribute is a integer ordinal that defines the symbol unit for the symbol
+     instance.  For symbols that do not define multiple units, this will always be 1.
+
+
+== Hierarchical Sheet Section
+
+The `sheet` token defines a hierarchical sheet of the schematic.
+
+```
+  (sheet
+    POSITION_IDENTIFIER                                         <1>
+    (size WIDTH HEIGHT)                                         <2>
+    [(fields_autoplaced)]                                       <3>
+    STROKE_DEFINITION                                           <4>
+    FILL_DEFINITION                                             <5>
+    UNIQUE_IDENTIFIER                                           <6>
+    SHEET_NAME_PROPERTY                                         <7>
+    FILE_NAME_PROPERTY                                          <8>
+    HIERARCHICAL_PINS                                           <9>
+    (instances                                                  <10>
+      (project "PROJECT_NAME"                                   <11>
+        (path "PATH_INSTANCE"                                   <12>
+          (page "PAGE_NUMBER")                                  <13>
+        )
+
+        ;; Optional sheet instances for this `project`...
+      )
+
+      ;; Optional sheet instances for other `project`...
+    )
+  )
+```
+
+<1> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates and angle of rotation]
+    of the sheet in the schematic.
+<2> The `size` token attributes define the WIDTH and HEIGHT of the sheet.
+<3> The optional `fields_autoplaced` token indicates if the properties have been automatically
+    placed.
+<4> The STROKE_DEFINITION defines how the sheet
+    xref:../sexpr-intro/index.adoc#_stroke_definition[outline is drawn].
+<5> The FILL_DEFINITION defines how the sheet is
+    xref:../sexpr-intro/index.adoc#_fill_definition[filled].
+<6> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the sheet.  This is used to map the sheet
+    <<_symbol_instance_section,symbol instance information>> and
+    <<_hierarchical_sheet_instance_section,sheet instance information>>.
+<7> The SHEET_PROPERTY_NAME is a xref:../sexpr-intro/index.adoc#_symbol_property[property] that
+    defines the name of the sheet.  This property is mandatory.
+<8> The FILE_NAME_PROPERTY is a xref:../sexpr-intro/index.adoc#_symbol_property[property] that
+    defines the file name of the sheet.  This property is mandatory.
+<9> The HIERARCHICAL_PINS section is a list of
+    <<_hierarchical_sheet_pin_definition, hierarchical pins>> that map a
+    <<_hierarchical_label_section,hierarchical label>> defined in the associated schematic file.
+<10> The `instances` token defines a list of sheet instances grouped by project.  Every sheet
+     will have a least one instance.
+<11> The `project` token attribute defines the name of the project to which the instance data
+     belongs.  There can be instance data from other project when schematics are shared across
+     multiple projects.  The projects will be sorted by the `PROJECT_NAME` in alphabetical order.
+<12> The `path` token attribute is the <<_instance_path,path to the sheet instance>> for the
+     sheet instance data.
+<13> The `page` token attribute is a string that defines the page number for the sheet instance.
+
+=== Hierarchical Sheet Pin Definition
+
+The `pin` token in a <<_hierarchical_sheet_section,sheet>> object defines an electrical connection
+between the sheet in a schematic with the <<_hierarchical_label_section,hierarchical label>>
+defined in the associated schematic file.
+
+```
+  (pin
+    "NAME"                                                      <1>
+    input | output | bidirectional | tri_state | passive        <2>
+    POSITION_IDENTIFIER                                         <3>
+    TEXT_EFFECTS                                                <4>
+    UNIQUE_IDENTIFIER                                           <5>
+  )
+```
+
+<1> The "NAME" attribute defines the name of the sheet pin.  It must have an identically named
+    <<_hierarchical_label_section,hierarchical label>> in the associated schematic file.
+<2> The electrical connect type token defines the type of electrical connect made by the sheet
+    pin.
+<3> The POSITION_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_position_identifier[X and Y coordinates and angle of rotation]
+    of the pin in the sheet.
+<4> The TEXT_EFFECTS section defines how the
+    xref:../sexpr-intro/index.adoc#_text_effects[pin name text is drawn].
+<5> The UNIQUE_IDENTIFIER defines the
+    xref:../sexpr-intro/index.adoc#_universally_unique_identifier[universally unique identifier]
+    for the pin.
+
+
+== Root Sheet Instance Section
+
+```
+ (path
+    "/"                                                         <1>
+    (page "PAGE")                                               <2>
+  )
+```
+
+<1> The instance path is always empty ("/") since there are no sheets pointing to the root sheet.
+<2> The `page` token defines the page number of the root sheet.  Page numbers can be any valid
+    string.
