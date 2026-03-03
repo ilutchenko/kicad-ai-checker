@@ -1,5 +1,31 @@
 """kischk package."""
 
-from .kicad.project import LoadedProject, ProjectLoaderError, load_project
+from .kicad import (
+    LoadedProject,
+    ParsedProject,
+    ParsedSchematic,
+    ProjectLoaderError,
+    SExprAtom,
+    SExprList,
+    SExprNode,
+    SchematicParseError,
+    load_project,
+    parse_loaded_project,
+    parse_project,
+    parse_schematic_file,
+)
 
-__all__ = ["LoadedProject", "ProjectLoaderError", "load_project"]
+__all__ = [
+    "LoadedProject",
+    "ParsedProject",
+    "ParsedSchematic",
+    "ProjectLoaderError",
+    "SExprAtom",
+    "SExprList",
+    "SExprNode",
+    "SchematicParseError",
+    "load_project",
+    "parse_loaded_project",
+    "parse_project",
+    "parse_schematic_file",
+]
