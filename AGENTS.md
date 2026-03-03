@@ -5,6 +5,7 @@ This is a project that will check KiCad schematic correctness using external LLM
 It's a python project, aiming to work with .kicad_sch files.
 In kicad-dev-docs/ you can find docs describing kicad files formats.
 In test_kicad_project/ you can find an example of the real kicad project.
+Update .gitignore file when needed. 
 
 Here is approximate but not strict plan of the project realization.
 ### Phase A — Core analyzer (no KiCad UI integration yet)
