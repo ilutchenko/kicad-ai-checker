@@ -1,0 +1,1 @@
+"""KiCad-specific project utilities."""
