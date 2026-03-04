@@ -1,7 +1,14 @@
 """kischk package."""
 
 from .kicad import (
+    ElectricalBuildError,
+    ElectricalComponent,
+    ElectricalNet,
+    ElectricalPin,
+    ElectricalProject,
+    ElectricalSchematic,
     LoadedProject,
+    NetMember,
     ParsedProject,
     ParsedSchematic,
     ProjectLoaderError,
@@ -9,6 +16,8 @@ from .kicad import (
     SExprList,
     SExprNode,
     SchematicParseError,
+    build_electrical_from_parsed,
+    build_electrical_project,
     load_project,
     parse_loaded_project,
     parse_project,
@@ -16,7 +25,14 @@ from .kicad import (
 )
 
 __all__ = [
+    "ElectricalBuildError",
+    "ElectricalComponent",
+    "ElectricalNet",
+    "ElectricalPin",
+    "ElectricalProject",
+    "ElectricalSchematic",
     "LoadedProject",
+    "NetMember",
     "ParsedProject",
     "ParsedSchematic",
     "ProjectLoaderError",
@@ -24,6 +40,8 @@ __all__ = [
     "SExprList",
     "SExprNode",
     "SchematicParseError",
+    "build_electrical_from_parsed",
+    "build_electrical_project",
     "load_project",
     "parse_loaded_project",
     "parse_project",

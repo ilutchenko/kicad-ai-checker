@@ -5,6 +5,7 @@ KiCad schematic checker (early stage).
 Current code implements two foundational modules:
 - `project loader`: discovers root schematic and resolves hierarchical sheets.
 - `schematic parser`: parses `.kicad_sch` S-expressions into an AST.
+- `electrical builder`: converts AST into compact LLM-ready electrical model (components/pins/nets).
 
 ## Module: Project Loader
 
@@ -91,11 +92,65 @@ Raises `SchematicParseError` for:
 
 1. `load_project(project_root)` discovers all related schematic files.
 2. `parse_loaded_project(loaded)` parses each file into AST.
-3. Resulting `ParsedProject` becomes input for future phases:
+3. `build_electrical_from_parsed(loaded, parsed)` converts AST to compact electrical model.
+4. Resulting `ElectricalProject` becomes input for future phases:
 - typed schematic model extraction
 - connectivity graph construction
 - LLM-assisted checks
 - report generation
+
+## Module: Electrical Builder (Compact Model)
+
+Path: `src/kischk/kicad/electrical_builder.py` and `src/kischk/kicad/electrical_model.py`
+
+### Purpose
+Reduce verbose KiCad AST into electrical information needed for rule checks and LLM prompts.
+
+### Main API
+- `build_electrical_project(project_root: str | Path) -> ElectricalProject`
+- `build_electrical_from_parsed(loaded: LoadedProject, parsed: ParsedProject) -> ElectricalProject`
+
+### Input
+- `LoadedProject` + `ParsedProject` (or project root shortcut API).
+
+### Output
+`ElectricalProject` dataclass:
+- `schematics: tuple[ElectricalSchematic, ...]`
+- `nets: tuple[ElectricalNet, ...]`
+
+`ElectricalSchematic`:
+- `path`
+- `sheet_path` (hierarchical path like `/Root/STM32`)
+- `components`
+
+`ElectricalComponent`:
+- `reference`, `value`, `lib_id`, `unit`, `uuid`
+- `footprint`, `datasheet`, `description`, `lcsc`, `custom_fields` (non-standard user fields only)
+- `pins`
+
+`ElectricalPin`:
+- `pin_number`, `pin_name`, `direction`
+- `is_no_connect`
+- `net_id`, `net_name`
+
+`ElectricalNet`:
+- stable `net_id` (`N0001`, ...)
+- optional `net_name`
+- `members` (`reference`, `pin_number`)
+- attached `labels`
+- `is_global`
+
+### Extraction logic
+1. Build per-sheet connectivity from `wire`, `junction`, `label`, `global_label`, and `hierarchical_label`.
+2. Parse library pin definitions from `lib_symbols` to get pin names/directions/relative coordinates.
+3. Parse symbol instances (`symbol`) to build components and pin instances.
+4. Transform lib pin coordinates into sheet coordinates using symbol `at`, `rotation`, and `mirror`.
+5. Link sheet pins to child-sheet hierarchical labels by `Sheetfile` + pin name.
+6. Merge connectivity into net groups and assign each component pin to a net.
+7. Promote power symbols (`lib_id` starting with `power:`) to global net labels using symbol `Value`.
+
+### Error model
+Raises `ElectricalBuildError` for internal model consistency problems (for example, missing parsed schematics or unsupported rotations).
 
 ## Minimal usage example
 
