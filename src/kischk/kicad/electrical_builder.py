@@ -13,6 +13,7 @@ from .electrical_model import (
     ElectricalSchematic,
     NetMember,
 )
+from .netlist import NetlistData, NetlistError, load_or_export_project_netlist
 from .project import LoadedProject, load_project
 from .sch_model import ParsedProject, ParsedSchematic, SExprAtom, SExprList, SExprNode
 from .sch_parser import parse_loaded_project
@@ -112,12 +113,19 @@ class _DisjointSet:
 def build_electrical_project(project_root: str | Path) -> ElectricalProject:
     loaded = load_project(project_root)
     parsed = parse_loaded_project(loaded)
-    return build_electrical_from_parsed(loaded, parsed)
+    netlist: NetlistData | None = None
+    try:
+        netlist = load_or_export_project_netlist(project_root)
+    except (NetlistError, FileNotFoundError):
+        # Keep geometry-based fallback if kicad-cli/netlist export is unavailable.
+        netlist = None
+    return build_electrical_from_parsed(loaded, parsed, netlist=netlist)
 
 
 def build_electrical_from_parsed(
     loaded: LoadedProject,
     parsed: ParsedProject,
+    netlist: NetlistData | None = None,
 ) -> ElectricalProject:
     by_path = {sch.path.resolve(): sch for sch in parsed.schematics}
     missing = [p for p in loaded.schematic_files if p.resolve() not in by_path]
@@ -191,7 +199,7 @@ def build_electrical_from_parsed(
 
     net_entries = sorted(root_to_nodes.items(), key=lambda item: item[0])
     root_to_net: dict[str, tuple[str, str | None]] = {}
-    nets: list[ElectricalNet] = []
+    geometry_nets: list[ElectricalNet] = []
 
     for idx, (root, _nodes) in enumerate(net_entries, start=1):
         net_id = f"N{idx:04d}"
@@ -200,7 +208,7 @@ def build_electrical_from_parsed(
         root_to_net[root] = (net_id, net_name)
         labels = tuple(sorted({name for _, name in candidates if name}))
         is_global = any(priority == 0 for priority, _ in candidates)
-        nets.append(
+        geometry_nets.append(
             ElectricalNet(
                 net_id=net_id,
                 net_name=net_name,
@@ -210,7 +218,13 @@ def build_electrical_from_parsed(
             )
         )
 
-    net_members: dict[str, list[NetMember]] = {net.net_id: [] for net in nets}
+    net_members: dict[str, list[NetMember]]
+    net_lookup_by_ref_pin: dict[tuple[str, str], tuple[str, str | None, str | None]] = {}
+    if netlist is not None:
+        nets, net_members, net_lookup_by_ref_pin = _build_nets_from_netlist(netlist)
+    else:
+        nets = geometry_nets
+        net_members = {net.net_id: [] for net in nets}
     finalized_schematics: list[ElectricalSchematic] = []
 
     for path in loaded.schematic_files:
@@ -223,7 +237,17 @@ def build_electrical_from_parsed(
             for pin in comp.pins:
                 net_id: str | None = None
                 net_name: str | None = None
-                if pin.node:
+                direction = pin.direction
+
+                ref = comp.reference
+                if ref is not None:
+                    from_netlist = net_lookup_by_ref_pin.get((ref, pin.pin_number))
+                    if from_netlist is not None:
+                        net_id, net_name, pin_type = from_netlist
+                        if pin_type:
+                            direction = pin_type
+
+                if netlist is None and net_id is None and pin.node:
                     root = dsu.find(pin.node)
                     net_id, net_name = root_to_net[root]
 
@@ -231,14 +255,14 @@ def build_electrical_from_parsed(
                     ElectricalPin(
                         pin_number=pin.pin_number,
                         pin_name=pin.pin_name,
-                        direction=pin.direction,
+                        direction=direction,
                         is_no_connect=pin.is_no_connect,
                         net_id=net_id,
                         net_name=net_name,
                     )
                 )
 
-                if net_id and comp.uuid and comp.reference:
+                if netlist is None and net_id and comp.uuid and comp.reference:
                     net_members[net_id].append(
                         NetMember(
                             component_uuid=comp.uuid,
@@ -272,6 +296,25 @@ def build_electrical_from_parsed(
                 components=tuple(finalized_components),
             )
         )
+
+    if netlist is not None:
+        ref_to_uuid: dict[str, str] = {}
+        for schematic in finalized_schematics:
+            for component in schematic.components:
+                if component.reference and component.uuid:
+                    ref_to_uuid[component.reference] = component.uuid
+
+        for net_id, members in net_members.items():
+            normalized: list[NetMember] = []
+            for member in members:
+                normalized.append(
+                    NetMember(
+                        component_uuid=ref_to_uuid.get(member.reference, member.component_uuid),
+                        reference=member.reference,
+                        pin_number=member.pin_number,
+                    )
+                )
+            net_members[net_id] = normalized
 
     finalized_nets = tuple(
         ElectricalNet(
@@ -704,6 +747,48 @@ def _select_net_name(candidates: Iterable[tuple[int, str]]) -> str | None:
     return ranked[0][1]
 
 
+def _build_nets_from_netlist(
+    netlist: NetlistData,
+) -> tuple[
+    list[ElectricalNet],
+    dict[str, list[NetMember]],
+    dict[tuple[str, str], tuple[str, str | None, str | None]],
+]:
+    nets: list[ElectricalNet] = []
+    net_members: dict[str, list[NetMember]] = {}
+    by_ref_pin: dict[tuple[str, str], tuple[str, str | None, str | None]] = {}
+
+    sorted_nets = sorted(netlist.nets, key=lambda n: _parse_int(n.code, fallback=10**9))
+    for net in sorted_nets:
+        net_id = net.code
+        net_name = net.name
+        labels = (net_name,) if net_name else ()
+        is_global = bool(net_name and not net_name.startswith("/"))
+        nets.append(
+            ElectricalNet(
+                net_id=net_id,
+                net_name=net_name,
+                members=(),
+                labels=labels,
+                is_global=is_global,
+            )
+        )
+
+        members: list[NetMember] = []
+        for node in net.nodes:
+            by_ref_pin[(node.ref, node.pin)] = (net_id, net_name, node.pintype)
+            members.append(
+                NetMember(
+                    component_uuid=node.ref,
+                    reference=node.ref,
+                    pin_number=node.pin,
+                )
+            )
+        net_members[net_id] = members
+
+    return nets, net_members, by_ref_pin
+
+
 def _point_key(point: _Point) -> str:
     return f"{point.x:.6f},{point.y:.6f}"
 
@@ -787,6 +872,13 @@ def _int_value(node: SExprList | None, default: int | None = 0) -> int | None:
         return int(value)
     except ValueError:
         return default
+
+
+def _parse_int(value: str, fallback: int) -> int:
+    try:
+        return int(value)
+    except ValueError:
+        return fallback
 
 
 def _symbol_unit_from_name(name: str | None) -> int | None:

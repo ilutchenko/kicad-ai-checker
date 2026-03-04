@@ -27,6 +27,16 @@ class ElectricalBuilderTests(unittest.TestCase):
         )
         self.assertGreater(connected_pin_count, 0)
 
+    def test_uses_kicad_netlist_codes_and_names(self) -> None:
+        model = build_electrical_project(REPO_ROOT / "test_kicad_project")
+        all_components = [c for s in model.schematics for c in s.components]
+
+        r14 = next(c for c in all_components if c.reference == "R14")
+        pin2 = next(p for p in r14.pins if p.pin_number == "2")
+
+        self.assertEqual(pin2.net_id, "1")
+        self.assertEqual(pin2.net_name, "+3.3V")
+
     def test_extracts_pin_direction_and_reference(self) -> None:
         model = build_electrical_project(REPO_ROOT / "test_kicad_project")
         all_components = [c for s in model.schematics for c in s.components]

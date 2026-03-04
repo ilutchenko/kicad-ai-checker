@@ -5,6 +5,7 @@ KiCad schematic checker (early stage).
 Current code implements two foundational modules:
 - `project loader`: discovers root schematic and resolves hierarchical sheets.
 - `schematic parser`: parses `.kicad_sch` S-expressions into an AST.
+- `netlist module`: exports/parses KiCad netlist (`kicadsexpr`) from the root schematic.
 - `electrical builder`: converts AST into compact LLM-ready electrical model (components/pins/nets).
 
 ## Module: Project Loader
@@ -92,7 +93,7 @@ Raises `SchematicParseError` for:
 
 1. `load_project(project_root)` discovers all related schematic files.
 2. `parse_loaded_project(loaded)` parses each file into AST.
-3. `build_electrical_from_parsed(loaded, parsed)` converts AST to compact electrical model.
+3. `build_electrical_project(project_root)` exports/parses KiCad netlist and converts AST to compact electrical model.
 4. Resulting `ElectricalProject` becomes input for future phases:
 - typed schematic model extraction
 - connectivity graph construction
@@ -108,10 +109,13 @@ Reduce verbose KiCad AST into electrical information needed for rule checks and 
 
 ### Main API
 - `build_electrical_project(project_root: str | Path) -> ElectricalProject`
-- `build_electrical_from_parsed(loaded: LoadedProject, parsed: ParsedProject) -> ElectricalProject`
+- `build_electrical_from_parsed(loaded: LoadedProject, parsed: ParsedProject, netlist: NetlistData | None = None) -> ElectricalProject`
 
 ### Input
-- `LoadedProject` + `ParsedProject` (or project root shortcut API).
+- `LoadedProject` + `ParsedProject`, optionally `NetlistData`.
+- In `build_electrical_project`, netlist is auto-loaded:
+- prefer `<root_schematic_basename>.net` if present
+- otherwise export via `kicad-cli sch export netlist --format kicadsexpr`
 
 ### Output
 `ElectricalProject` dataclass:
@@ -134,23 +138,38 @@ Reduce verbose KiCad AST into electrical information needed for rule checks and 
 - `net_id`, `net_name`
 
 `ElectricalNet`:
-- stable `net_id` (`N0001`, ...)
+- `net_id` from KiCad netlist `code` when netlist is available, otherwise geometry fallback (`N0001`, ...)
 - optional `net_name`
 - `members` (`reference`, `pin_number`)
 - attached `labels`
 - `is_global`
 
 ### Extraction logic
-1. Build per-sheet connectivity from `wire`, `junction`, `label`, `global_label`, and `hierarchical_label`.
-2. Parse library pin definitions from `lib_symbols` to get pin names/directions/relative coordinates.
-3. Parse symbol instances (`symbol`) to build components and pin instances.
-4. Transform lib pin coordinates into sheet coordinates using symbol `at`, `rotation`, and `mirror`.
-5. Link sheet pins to child-sheet hierarchical labels by `Sheetfile` + pin name.
-6. Merge connectivity into net groups and assign each component pin to a net.
-7. Promote power symbols (`lib_id` starting with `power:`) to global net labels using symbol `Value`.
+1. Parse library pin definitions from `lib_symbols` to get pin names/directions/relative coordinates.
+2. Parse symbol instances (`symbol`) to build components and pin instances.
+3. If netlist is available, assign pin `net_id/net_name` from netlist `(net code/name)` by `(ref, pin)`.
+4. If netlist provides `pintype`, use it as pin direction in output.
+5. If netlist is unavailable, fallback to geometry connectivity (`wire`, `junction`, labels, hierarchy links).
 
 ### Error model
-Raises `ElectricalBuildError` for internal model consistency problems (for example, missing parsed schematics or unsupported rotations).
+Raises `ElectricalBuildError` for internal model consistency problems (for example, missing parsed schematics or unsupported rotations). Netlist export/parse failures are non-fatal in `build_electrical_project` and trigger geometry fallback.
+
+## Module: Netlist
+
+Path: `src/kischk/kicad/netlist.py`
+
+### Purpose
+Get reliable net connectivity from KiCad-generated netlist instead of inferring all nets from graphics primitives.
+
+### Main API
+- `export_netlist(schematic_file, output_file, fmt=\"kicadsexpr\") -> Path`
+- `load_or_export_project_netlist(project_root) -> NetlistData`
+- `parse_netlist_file(path) -> NetlistData`
+
+### Output
+- `NetlistData(nets=...)`
+- `NetlistNet(code, name, net_class, nodes=...)`
+- `NetlistNode(ref, pin, pintype, pinfunction)`
 
 ## Minimal usage example
 
@@ -170,6 +189,8 @@ print(parsed.schematics[0].root.items[0])  # SExprAtom("kicad_sch", quoted=False
 
 - `tests/test_project_loader.py`
 - `tests/test_sch_parser.py`
+- `tests/test_netlist.py`
+- `tests/test_electrical_builder.py`
 
 Run:
 
