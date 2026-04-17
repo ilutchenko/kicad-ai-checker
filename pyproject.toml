@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "KiCad schematic checker"
 requires-python = ">=3.11"
 
+[project.scripts]
+kischk-main-cycle = "kischk.cli.check_schematic:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
