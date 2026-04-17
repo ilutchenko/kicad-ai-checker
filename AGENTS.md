@@ -1,6 +1,7 @@
 
 # Description of the project
 
+Check README.md for details.
 This is a project that will check KiCad schematic correctness using external LLM API.
 It's a python project, aiming to work with .kicad_sch files.
 In kicad-dev-docs/ you can find docs describing kicad files formats.
@@ -101,3 +102,5 @@ kicad-schematic-checker/
       hierarchy_project/
     test_parser.py
 ```
+
+When you do changes, keep README.md and this AGENTS.md updated.
