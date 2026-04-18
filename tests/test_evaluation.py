@@ -42,6 +42,7 @@ class EvaluationTests(unittest.TestCase):
                 detector_prompt_path=None,
                 detector_model="gpt-5.3-codex",
                 detector_reasoning_effort="xhigh",
+                usage_stats_path=None,
             )
             run_results_check_mock.assert_called_once_with(
                 run_dir=expected_run_dir,
@@ -51,6 +52,7 @@ class EvaluationTests(unittest.TestCase):
                 prompt_path=None,
                 model="gpt-5.4-mini",
                 reasoning_effort="medium",
+                usage_stats_path=expected_run_dir / "codex_usage.json",
             )
             detected_total_mock.assert_called_once_with(
                 expected_run_dir / "analisys_report_check.json"
@@ -71,12 +73,14 @@ class EvaluationTests(unittest.TestCase):
                 prompt_path=None,
                 model="gpt-5.3-codex",
                 reasoning_effort="high",
+                usage_stats_path=expected_run_dir / "codex_usage.json",
             )
             run_preprocessing_editor_mock.assert_called_once_with(
                 analysis_process_log_path=expected_run_dir / "analysis_process.md",
                 prompt_path=None,
                 model="gpt-5.3-codex",
                 reasoning_effort="high",
+                usage_stats_path=expected_run_dir / "codex_usage.json",
             )
 
     def test_forwards_custom_detector_and_results_check_settings(self) -> None:
@@ -147,6 +151,7 @@ class EvaluationTests(unittest.TestCase):
                 detector_prompt_path=detector_prompt_path,
                 detector_model="gpt-5.4",
                 detector_reasoning_effort="high",
+                usage_stats_path=None,
             )
             run_results_check_mock.assert_called_once_with(
                 run_dir=expected_run_dir,
@@ -156,6 +161,7 @@ class EvaluationTests(unittest.TestCase):
                 prompt_path=results_check_prompt_path,
                 model="gpt-5.2",
                 reasoning_effort="xhigh",
+                usage_stats_path=expected_run_dir / "codex_usage.json",
             )
             detected_total_mock.assert_called_once_with(
                 results_check_output_path.resolve()
@@ -168,12 +174,14 @@ class EvaluationTests(unittest.TestCase):
                 prompt_path=detector_prompt_editor_prompt_path,
                 model="gpt-5.4",
                 reasoning_effort="xhigh",
+                usage_stats_path=expected_run_dir / "codex_usage.json",
             )
             run_preprocessing_editor_mock.assert_called_once_with(
                 analysis_process_log_path=analysis_process_log_path.resolve(),
                 prompt_path=preprocessing_editor_prompt_path,
                 model="gpt-5.4-mini",
                 reasoning_effort="xhigh",
+                usage_stats_path=expected_run_dir / "codex_usage.json",
             )
 
     def test_calculate_detected_total_from_summary(self) -> None:

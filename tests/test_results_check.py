@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -23,15 +22,7 @@ class ResultsCheckTests(unittest.TestCase):
             checker_output.write_text("{}", encoding="utf-8")
             output_json = Path(tmp) / "nested" / "analisys_report_check.json"
 
-            captured: dict[str, object] = {}
-
-            def _fake_run(command: list[str], input: str, text: bool) -> subprocess.CompletedProcess[str]:
-                captured["command"] = command
-                captured["input"] = input
-                captured["text"] = text
-                return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
-
-            with patch("kischk.cli.results_check.subprocess.run", side_effect=_fake_run):
+            with patch("kischk.cli.results_check.run_codex_exec") as run_codex_exec_mock:
                 returned = run_results_check(
                     run_dir=run_dir,
                     known_mistakes_path=known_mistakes,
@@ -40,12 +31,14 @@ class ResultsCheckTests(unittest.TestCase):
                     prompt_path=prompt_path,
                     model="gpt-5.4-mini",
                     reasoning_effort="medium",
-                )
+            )
 
             self.assertEqual(returned, output_json.resolve())
             self.assertTrue(output_json.parent.exists())
+            run_codex_exec_mock.assert_called_once()
+            call = run_codex_exec_mock.call_args.kwargs
             self.assertEqual(
-                captured["command"],
+                call["command"],
                 [
                     "codex",
                     "exec",
@@ -58,8 +51,11 @@ class ResultsCheckTests(unittest.TestCase):
                     "-",
                 ],
             )
-            self.assertTrue(captured["text"])
-            prompt = str(captured["input"])
+            self.assertEqual(call["usage_step"], "results_check")
+            self.assertEqual(call["model"], "gpt-5.4-mini")
+            self.assertEqual(call["reasoning_effort"], "medium")
+            self.assertIsNone(call["usage_stats_path"])
+            prompt = str(call["prompt"])
             self.assertIn("template", prompt)
             self.assertIn(f"known mistakes file: {known_mistakes.resolve()}", prompt)
             self.assertIn(f"output of schematic checker: {checker_output.resolve()}", prompt)
@@ -78,8 +74,8 @@ class ResultsCheckTests(unittest.TestCase):
             output_json = Path(tmp) / "analisys_report_check.json"
 
             with patch(
-                "kischk.cli.results_check.subprocess.run",
-                return_value=subprocess.CompletedProcess(["codex"], 3, stdout="", stderr=""),
+                "kischk.cli.results_check.run_codex_exec",
+                side_effect=RuntimeError("codex exec failed with exit code 3"),
             ):
                 with self.assertRaisesRegex(RuntimeError, "exit code 3"):
                     run_results_check(

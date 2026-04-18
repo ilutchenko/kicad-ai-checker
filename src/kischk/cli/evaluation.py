@@ -69,6 +69,7 @@ def run_evaluation(
     analysis_process_log_path: str | Path | None = None,
     preprocessing_editor_model: str = "gpt-5.3-codex",
     preprocessing_editor_reasoning_effort: str = "high",
+    usage_stats_path: str | Path | None = None,
 ) -> Path:
     """Run evaluation loop.
 
@@ -78,6 +79,11 @@ def run_evaluation(
     runs_root_path = Path(runs_root).expanduser().resolve()
 
     _log("Starting evaluation loop (1 iteration for now).")
+    resolved_usage_stats_path = (
+        Path(usage_stats_path).expanduser().resolve()
+        if usage_stats_path is not None
+        else None
+    )
     run_dir = run_main_cycle(
         project_dir=project_root,
         runs_root=runs_root_path,
@@ -85,7 +91,10 @@ def run_evaluation(
         detector_prompt_path=detector_prompt_path,
         detector_model=detector_model,
         detector_reasoning_effort=detector_reasoning_effort,
+        usage_stats_path=resolved_usage_stats_path,
     )
+    if resolved_usage_stats_path is None:
+        resolved_usage_stats_path = run_dir / "codex_usage.json"
     _log("Running detector results check.")
     resolved_known_mistakes = (
         Path(known_mistakes_path).expanduser().resolve()
@@ -110,6 +119,7 @@ def run_evaluation(
         prompt_path=results_check_prompt_path,
         model=results_check_model,
         reasoning_effort=results_check_reasoning_effort,
+        usage_stats_path=resolved_usage_stats_path,
     )
     detected, total = _calculate_detected_total(resolved_results_check_output)
     _log(f"Known mistakes detected: {detected}/{total}")
@@ -134,6 +144,7 @@ def run_evaluation(
         prompt_path=detector_prompt_editor_prompt_path,
         model=detector_prompt_editor_model,
         reasoning_effort=detector_prompt_editor_reasoning_effort,
+        usage_stats_path=resolved_usage_stats_path,
     )
     resolved_analysis_process_log = (
         Path(analysis_process_log_path).expanduser().resolve()
@@ -146,6 +157,7 @@ def run_evaluation(
         prompt_path=preprocessing_editor_prompt_path,
         model=preprocessing_editor_model,
         reasoning_effort=preprocessing_editor_reasoning_effort,
+        usage_stats_path=resolved_usage_stats_path,
     )
     _log(f"Iteration 1 completed. Run directory: {run_dir}")
     _log("Evaluation loop completed.")
@@ -275,6 +287,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default="high",
         help="Reasoning effort for preprocessing editor model (default: high).",
     )
+    parser.add_argument(
+        "--usage-stats-path",
+        type=Path,
+        default=None,
+        help="Path to JSON file for codex token usage stats (default: <run_dir>/codex_usage.json).",
+    )
     return parser
 
 
@@ -303,6 +321,7 @@ def main(argv: list[str] | None = None) -> int:
         analysis_process_log_path=args.analysis_process_log_path,
         preprocessing_editor_model=args.preprocessing_editor_model,
         preprocessing_editor_reasoning_effort=args.preprocessing_editor_reasoning_effort,
+        usage_stats_path=args.usage_stats_path,
     )
     print(f"Evaluation run directory: {run_dir}")
     return 0

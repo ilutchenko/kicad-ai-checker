@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,18 +17,9 @@ class PreprocessingEditorTests(unittest.TestCase):
             analysis_process_log = Path(tmp) / "analysis_process.md"
             analysis_process_log.write_text("log", encoding="utf-8")
 
-            captured: dict[str, object] = {}
-
-            def _fake_run(command: list[str], input: str, text: bool) -> subprocess.CompletedProcess[str]:
-                captured["command"] = command
-                captured["input"] = input
-                captured["text"] = text
-                return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
-
             with patch(
-                "kischk.cli.preprocessing_editor.subprocess.run",
-                side_effect=_fake_run,
-            ):
+                "kischk.cli.preprocessing_editor.run_codex_exec",
+            ) as run_codex_exec_mock:
                 returned = run_preprocessing_editor(
                     analysis_process_log_path=analysis_process_log,
                     prompt_path=prompt_path,
@@ -38,8 +28,9 @@ class PreprocessingEditorTests(unittest.TestCase):
                 )
 
             self.assertEqual(returned, analysis_process_log.resolve())
+            run_codex_exec_call = run_codex_exec_mock.call_args.kwargs
             self.assertEqual(
-                captured["command"],
+                run_codex_exec_call["command"],
                 [
                     "codex",
                     "exec",
@@ -52,8 +43,11 @@ class PreprocessingEditorTests(unittest.TestCase):
                     "-",
                 ],
             )
-            self.assertTrue(captured["text"])
-            prompt = str(captured["input"])
+            self.assertEqual(run_codex_exec_call["usage_step"], "preprocessing_editor")
+            self.assertEqual(run_codex_exec_call["model"], "gpt-5.3-codex")
+            self.assertEqual(run_codex_exec_call["reasoning_effort"], "high")
+            self.assertIsNone(run_codex_exec_call["usage_stats_path"])
+            prompt = str(run_codex_exec_call["prompt"])
             self.assertIn("template", prompt)
             self.assertIn(
                 f"analysis_process.md path: {analysis_process_log.resolve()}",
@@ -68,8 +62,8 @@ class PreprocessingEditorTests(unittest.TestCase):
             analysis_process_log.write_text("log", encoding="utf-8")
 
             with patch(
-                "kischk.cli.preprocessing_editor.subprocess.run",
-                return_value=subprocess.CompletedProcess(["codex"], 5, stdout="", stderr=""),
+                "kischk.cli.preprocessing_editor.run_codex_exec",
+                side_effect=RuntimeError("codex exec failed with exit code 5"),
             ):
                 with self.assertRaisesRegex(RuntimeError, "exit code 5"):
                     run_preprocessing_editor(

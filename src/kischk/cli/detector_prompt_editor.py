@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 from pathlib import Path
-import subprocess
+
+from kischk.cli.codex_usage import run_codex_exec
 
 
 def _log(message: str) -> None:
@@ -44,6 +45,7 @@ def run_detector_prompt_editor(
     prompt_path: str | Path | None = None,
     model: str = "gpt-5.3-codex",
     reasoning_effort: str = "high",
+    usage_stats_path: str | Path | None = None,
 ) -> Path:
     resolved_known_mistakes = Path(known_mistakes_path).expanduser().resolve()
     resolved_results_check_output = Path(results_check_output_path).expanduser().resolve()
@@ -80,11 +82,15 @@ def run_detector_prompt_editor(
     ]
     _log(f"Running detector prompt editor command: {' '.join(command)}")
     _log("Streaming codex detector-prompt-editor output:")
-    proc = subprocess.run(command, input=full_prompt, text=True)
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"Detector prompt editor step failed with exit code {proc.returncode}"
-        )
+    run_codex_exec(
+        command=command,
+        prompt=full_prompt,
+        log=_log,
+        usage_stats_path=usage_stats_path,
+        usage_step="detector_prompt_editor",
+        model=model,
+        reasoning_effort=reasoning_effort,
+    )
 
     _log(f"Detector prompt editor completed. Changelog path: {resolved_changelog}")
     return resolved_changelog
@@ -136,6 +142,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default="high",
         help="Reasoning effort for model (default: high).",
     )
+    parser.add_argument(
+        "--usage-stats-path",
+        type=Path,
+        default=None,
+        help="Path to JSON file for codex token usage stats.",
+    )
     return parser
 
 
@@ -151,6 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         prompt_path=args.prompt_path,
         model=args.model,
         reasoning_effort=args.reasoning_effort,
+        usage_stats_path=args.usage_stats_path,
     )
     print(f"Detector prompt editor changelog path: {changelog}")
     return 0

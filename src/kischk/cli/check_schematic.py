@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
-import subprocess
 from pathlib import Path
 import json
 from typing import Any
 
+from kischk.cli.codex_usage import run_codex_exec
 from kischk.kicad import (
     ElectricalComponent,
     ElectricalNet,
@@ -127,6 +127,7 @@ def _run_detector(
     run_dir: Path,
     model: str | None = None,
     reasoning_effort: str | None = None,
+    usage_stats_path: str | Path | None = None,
 ) -> None:
     command = ["codex", "exec", "--cd", str(run_dir)]
     if model:
@@ -136,9 +137,15 @@ def _run_detector(
     command.append("-")
     _log(f"Running detector command: {' '.join(command)}")
     _log("Streaming codex detector output:")
-    proc = subprocess.run(command, input=detector_prompt, text=True)
-    if proc.returncode != 0:
-        raise RuntimeError(f"Detector step failed with exit code {proc.returncode}")
+    run_codex_exec(
+        command=command,
+        prompt=detector_prompt,
+        log=_log,
+        usage_stats_path=usage_stats_path,
+        usage_step="detector",
+        model=model,
+        reasoning_effort=reasoning_effort,
+    )
     _log("Detector command finished successfully.")
 
 
@@ -149,6 +156,7 @@ def run_main_cycle(
     detector_prompt_path: str | Path | None = None,
     detector_model: str | None = None,
     detector_reasoning_effort: str | None = None,
+    usage_stats_path: str | Path | None = None,
 ) -> Path:
     project_root = Path(project_dir).expanduser().resolve()
     runs_root_path = Path(runs_root).expanduser().resolve()
@@ -168,6 +176,11 @@ def run_main_cycle(
     }
     output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     _log(f"Saved preprocessed net graph: {output_path}")
+    resolved_usage_stats_path = (
+        Path(usage_stats_path).expanduser().resolve()
+        if usage_stats_path is not None
+        else run_dir / "codex_usage.json"
+    )
 
     if run_detector:
         _log("Step 2/2: running detector prompt through codex exec.")
@@ -189,6 +202,7 @@ def run_main_cycle(
             run_dir=run_dir,
             model=detector_model,
             reasoning_effort=detector_reasoning_effort,
+            usage_stats_path=resolved_usage_stats_path,
         )
     else:
         _log("Detector step skipped (--skip-detector).")
@@ -235,6 +249,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default="xhigh",
         help="Reasoning effort for detector model.",
     )
+    parser.add_argument(
+        "--usage-stats-path",
+        type=Path,
+        default=None,
+        help="Path to JSON file for codex token usage stats (default: <run_dir>/codex_usage.json).",
+    )
     return parser
 
 
@@ -249,6 +269,7 @@ def main(argv: list[str] | None = None) -> int:
         detector_prompt_path=args.detector_prompt,
         detector_model=args.detector_model,
         detector_reasoning_effort=args.detector_reasoning_effort,
+        usage_stats_path=args.usage_stats_path,
     )
     print(f"Run directory: {run_dir}")
     print(f"Preprocessing output: {run_dir / 'processed_net_graph.json'}")

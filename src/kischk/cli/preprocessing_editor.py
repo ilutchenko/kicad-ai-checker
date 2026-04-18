@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 from pathlib import Path
-import subprocess
+
+from kischk.cli.codex_usage import run_codex_exec
 
 
 def _log(message: str) -> None:
@@ -32,6 +33,7 @@ def run_preprocessing_editor(
     prompt_path: str | Path | None = None,
     model: str = "gpt-5.3-codex",
     reasoning_effort: str = "high",
+    usage_stats_path: str | Path | None = None,
 ) -> Path:
     resolved_analysis_process_log = Path(analysis_process_log_path).expanduser().resolve()
 
@@ -61,11 +63,15 @@ def run_preprocessing_editor(
     ]
     _log(f"Running preprocessing editor command: {' '.join(command)}")
     _log("Streaming codex preprocessing-editor output:")
-    proc = subprocess.run(command, input=full_prompt, text=True)
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"Preprocessing editor step failed with exit code {proc.returncode}"
-        )
+    run_codex_exec(
+        command=command,
+        prompt=full_prompt,
+        log=_log,
+        usage_stats_path=usage_stats_path,
+        usage_step="preprocessing_editor",
+        model=model,
+        reasoning_effort=reasoning_effort,
+    )
 
     _log("Preprocessing editor completed.")
     return resolved_analysis_process_log
@@ -99,6 +105,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default="high",
         help="Reasoning effort for model (default: high).",
     )
+    parser.add_argument(
+        "--usage-stats-path",
+        type=Path,
+        default=None,
+        help="Path to JSON file for codex token usage stats.",
+    )
     return parser
 
 
@@ -111,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
         prompt_path=args.prompt_path,
         model=args.model,
         reasoning_effort=args.reasoning_effort,
+        usage_stats_path=args.usage_stats_path,
     )
     print(f"Preprocessing editor analysis log path: {analysis_log}")
     return 0

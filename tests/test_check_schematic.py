@@ -57,6 +57,10 @@ class MainCycleTests(unittest.TestCase):
             prompt_text = str(run_detector_mock.call_args.args[0])
             called_run_dir = run_detector_mock.call_args.kwargs["run_dir"]
             self.assertEqual(called_run_dir, run_dir)
+            self.assertEqual(
+                run_detector_mock.call_args.kwargs["usage_stats_path"],
+                run_dir / "codex_usage.json",
+            )
             self.assertIn("Detector prompt template", prompt_text)
             self.assertIn(f"processed_net_graph.json path: {output_path}", prompt_text)
             self.assertIn(
@@ -78,7 +82,7 @@ class MainCycleTests(unittest.TestCase):
             with patch(
                 "kischk.cli.check_schematic._run_detector",
             ) as run_detector_mock:
-                run_main_cycle(
+                run_dir = run_main_cycle(
                     project_dir,
                     runs_root=runs_root,
                     detector_prompt_path=prompt_file,
@@ -94,6 +98,10 @@ class MainCycleTests(unittest.TestCase):
             self.assertEqual(
                 run_detector_mock.call_args.kwargs["reasoning_effort"],
                 "xhigh",
+            )
+            self.assertEqual(
+                run_detector_mock.call_args.kwargs["usage_stats_path"],
+                run_dir / "codex_usage.json",
             )
 
 

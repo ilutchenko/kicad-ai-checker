@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -24,18 +23,9 @@ class DetectorPromptEditorTests(unittest.TestCase):
             current_detector_prompt.write_text("prompt", encoding="utf-8")
             changelog = Path(tmp) / "evaluation" / "detector_prompt_changelog.md"
 
-            captured: dict[str, object] = {}
-
-            def _fake_run(command: list[str], input: str, text: bool) -> subprocess.CompletedProcess[str]:
-                captured["command"] = command
-                captured["input"] = input
-                captured["text"] = text
-                return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
-
             with patch(
-                "kischk.cli.detector_prompt_editor.subprocess.run",
-                side_effect=_fake_run,
-            ):
+                "kischk.cli.detector_prompt_editor.run_codex_exec",
+            ) as run_codex_exec_mock:
                 returned = run_detector_prompt_editor(
                     known_mistakes_path=known_mistakes,
                     results_check_output_path=results_check_output,
@@ -48,8 +38,9 @@ class DetectorPromptEditorTests(unittest.TestCase):
 
             self.assertEqual(returned, changelog.resolve())
             self.assertTrue(changelog.parent.exists())
+            run_codex_exec_call = run_codex_exec_mock.call_args.kwargs
             self.assertEqual(
-                captured["command"],
+                run_codex_exec_call["command"],
                 [
                     "codex",
                     "exec",
@@ -62,8 +53,11 @@ class DetectorPromptEditorTests(unittest.TestCase):
                     "-",
                 ],
             )
-            self.assertTrue(captured["text"])
-            prompt = str(captured["input"])
+            self.assertEqual(run_codex_exec_call["usage_step"], "detector_prompt_editor")
+            self.assertEqual(run_codex_exec_call["model"], "gpt-5.3-codex")
+            self.assertEqual(run_codex_exec_call["reasoning_effort"], "high")
+            self.assertIsNone(run_codex_exec_call["usage_stats_path"])
+            prompt = str(run_codex_exec_call["prompt"])
             self.assertIn("template", prompt)
             self.assertIn(f"known mistakes file: {known_mistakes.resolve()}", prompt)
             self.assertIn(
@@ -89,8 +83,8 @@ class DetectorPromptEditorTests(unittest.TestCase):
             changelog = Path(tmp) / "detector_prompt_changelog.md"
 
             with patch(
-                "kischk.cli.detector_prompt_editor.subprocess.run",
-                return_value=subprocess.CompletedProcess(["codex"], 2, stdout="", stderr=""),
+                "kischk.cli.detector_prompt_editor.run_codex_exec",
+                side_effect=RuntimeError("codex exec failed with exit code 2"),
             ):
                 with self.assertRaisesRegex(RuntimeError, "exit code 2"):
                     run_detector_prompt_editor(
