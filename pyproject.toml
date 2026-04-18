@@ -10,6 +10,7 @@ requires-python = ">=3.11"
 
 [project.scripts]
 kischk-main-cycle = "kischk.cli.check_schematic:main"
+kischk-evaluation = "kischk.cli.evaluation:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -226,7 +226,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--detector-model",
         type=str,
-        default=gpt-5.3-codex,
+        default="gpt-5.3-codex",
         help="Model to use for detector codex exec (example: gpt-5.3-codex).",
     )
     parser.add_argument(
