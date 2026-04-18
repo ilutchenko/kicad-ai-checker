@@ -47,4 +47,4 @@ After editing the detector prompt, also produce a short Markdown changelog entry
 
 Commit the changes after editing.
 
-Here are locations of known_mistakes.md, analisys_report_check.json and current detector prompt:
+Here are locations of known_mistakes.md, analisys_report_check.json, current detector prompt and your markdown changelog:
