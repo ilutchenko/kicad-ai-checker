@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import kischk.cli.evaluation as evaluation_module
 from kischk.cli.evaluation import _calculate_detected_total, run_evaluation
 
 
@@ -20,6 +21,9 @@ class EvaluationTests(unittest.TestCase):
             with (
                 patch("kischk.cli.evaluation.run_main_cycle") as run_main_cycle_mock,
                 patch("kischk.cli.evaluation.run_results_check") as run_results_check_mock,
+                patch(
+                    "kischk.cli.evaluation.run_detector_prompt_editor"
+                ) as run_detector_prompt_editor_mock,
                 patch("kischk.cli.evaluation._calculate_detected_total") as detected_total_mock,
             ):
                 run_main_cycle_mock.return_value = expected_run_dir
@@ -48,6 +52,23 @@ class EvaluationTests(unittest.TestCase):
             detected_total_mock.assert_called_once_with(
                 expected_run_dir / "analisys_report_check.json"
             )
+            run_detector_prompt_editor_mock.assert_called_once_with(
+                known_mistakes_path=project_dir.resolve() / "known_mistakes.md",
+                results_check_output_path=expected_run_dir / "analisys_report_check.json",
+                current_detector_prompt_path=evaluation_module.Path(
+                    evaluation_module.__file__
+                ).resolve().parents[3]
+                / "prompts"
+                / "detector.md",
+                changelog_path=evaluation_module.Path(
+                    evaluation_module.__file__
+                ).resolve().parents[3]
+                / "evaluation"
+                / "detector_prompt_changelog.md",
+                prompt_path=None,
+                model="gpt-5.3-codex",
+                reasoning_effort="high",
+            )
 
     def test_forwards_custom_detector_and_results_check_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -62,11 +83,19 @@ class EvaluationTests(unittest.TestCase):
             known_mistakes_path.write_text("mistakes", encoding="utf-8")
             checker_output_path = Path(tmp) / "custom_analisys_report.json"
             results_check_output_path = Path(tmp) / "custom_analisys_report_check.json"
+            detector_prompt_editor_prompt_path = Path(tmp) / "detector_prompt_editor.md"
+            detector_prompt_editor_prompt_path.write_text("prompt", encoding="utf-8")
+            current_detector_prompt_path = Path(tmp) / "detector.md"
+            current_detector_prompt_path.write_text("prompt", encoding="utf-8")
+            detector_prompt_changelog_path = Path(tmp) / "detector_prompt_changelog.md"
 
             expected_run_dir = runs_root / "20260418_120001"
             with (
                 patch("kischk.cli.evaluation.run_main_cycle") as run_main_cycle_mock,
                 patch("kischk.cli.evaluation.run_results_check") as run_results_check_mock,
+                patch(
+                    "kischk.cli.evaluation.run_detector_prompt_editor"
+                ) as run_detector_prompt_editor_mock,
                 patch("kischk.cli.evaluation._calculate_detected_total") as detected_total_mock,
             ):
                 run_main_cycle_mock.return_value = expected_run_dir
@@ -84,6 +113,11 @@ class EvaluationTests(unittest.TestCase):
                     results_check_output_path=results_check_output_path,
                     results_check_model="gpt-5.2",
                     results_check_reasoning_effort="xhigh",
+                    detector_prompt_editor_prompt_path=detector_prompt_editor_prompt_path,
+                    current_detector_prompt_path=current_detector_prompt_path,
+                    detector_prompt_changelog_path=detector_prompt_changelog_path,
+                    detector_prompt_editor_model="gpt-5.4",
+                    detector_prompt_editor_reasoning_effort="xhigh",
                 )
 
             run_main_cycle_mock.assert_called_once_with(
@@ -105,6 +139,15 @@ class EvaluationTests(unittest.TestCase):
             )
             detected_total_mock.assert_called_once_with(
                 results_check_output_path.resolve()
+            )
+            run_detector_prompt_editor_mock.assert_called_once_with(
+                known_mistakes_path=known_mistakes_path.resolve(),
+                results_check_output_path=results_check_output_path.resolve(),
+                current_detector_prompt_path=current_detector_prompt_path.resolve(),
+                changelog_path=detector_prompt_changelog_path.resolve(),
+                prompt_path=detector_prompt_editor_prompt_path,
+                model="gpt-5.4",
+                reasoning_effort="xhigh",
             )
 
     def test_calculate_detected_total(self) -> None:
