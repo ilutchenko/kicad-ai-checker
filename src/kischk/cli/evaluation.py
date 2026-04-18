@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime
+import json
 from pathlib import Path
 
 from kischk.cli.check_schematic import run_main_cycle
@@ -11,6 +12,31 @@ from kischk.cli.results_check import run_results_check
 def _log(message: str) -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[kischk-eval {timestamp}] {message}", flush=True)
+
+
+def _is_detected(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() == "true"
+    return False
+
+
+def _calculate_detected_total(results_check_output_path: Path) -> tuple[int, int]:
+    payload = json.loads(results_check_output_path.read_text(encoding="utf-8"))
+    mistakes = payload.get("mistakes")
+    if not isinstance(mistakes, list):
+        raise ValueError(
+            f"Invalid results-check output format: {results_check_output_path} does not contain a list in 'mistakes'."
+        )
+
+    total = len(mistakes)
+    detected = sum(
+        1
+        for item in mistakes
+        if isinstance(item, dict) and _is_detected(item.get("detected"))
+    )
+    return detected, total
 
 
 def run_evaluation(
@@ -67,6 +93,8 @@ def run_evaluation(
         model=results_check_model,
         reasoning_effort=results_check_reasoning_effort,
     )
+    detected, total = _calculate_detected_total(resolved_results_check_output)
+    _log(f"Known mistakes detected: {detected}/{total}")
     _log(f"Iteration 1 completed. Run directory: {run_dir}")
     _log("Evaluation loop completed.")
     return run_dir

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from kischk.cli.evaluation import run_evaluation
+from kischk.cli.evaluation import _calculate_detected_total, run_evaluation
 
 
 class EvaluationTests(unittest.TestCase):
@@ -19,8 +20,10 @@ class EvaluationTests(unittest.TestCase):
             with (
                 patch("kischk.cli.evaluation.run_main_cycle") as run_main_cycle_mock,
                 patch("kischk.cli.evaluation.run_results_check") as run_results_check_mock,
+                patch("kischk.cli.evaluation._calculate_detected_total") as detected_total_mock,
             ):
                 run_main_cycle_mock.return_value = expected_run_dir
+                detected_total_mock.return_value = (3, 9)
 
                 actual = run_evaluation(project_dir=project_dir, runs_root=runs_root)
 
@@ -42,6 +45,9 @@ class EvaluationTests(unittest.TestCase):
                 model="gpt-5.4-mini",
                 reasoning_effort="medium",
             )
+            detected_total_mock.assert_called_once_with(
+                expected_run_dir / "analisys_report_check.json"
+            )
 
     def test_forwards_custom_detector_and_results_check_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -61,8 +67,10 @@ class EvaluationTests(unittest.TestCase):
             with (
                 patch("kischk.cli.evaluation.run_main_cycle") as run_main_cycle_mock,
                 patch("kischk.cli.evaluation.run_results_check") as run_results_check_mock,
+                patch("kischk.cli.evaluation._calculate_detected_total") as detected_total_mock,
             ):
                 run_main_cycle_mock.return_value = expected_run_dir
+                detected_total_mock.return_value = (5, 12)
 
                 run_evaluation(
                     project_dir=project_dir,
@@ -95,6 +103,30 @@ class EvaluationTests(unittest.TestCase):
                 model="gpt-5.2",
                 reasoning_effort="xhigh",
             )
+            detected_total_mock.assert_called_once_with(
+                results_check_output_path.resolve()
+            )
+
+    def test_calculate_detected_total(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "analisys_report_check.json"
+            output.write_text(
+                json.dumps(
+                    {
+                        "mistakes": [
+                            {"name": "a", "detected": "true"},
+                            {"name": "b", "detected": "false"},
+                            {"name": "c", "detected": True},
+                            {"name": "d", "detected": False},
+                            {"name": "e", "detected": "TRUE"},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            detected, total = _calculate_detected_total(output)
+            self.assertEqual((detected, total), (3, 5))
 
 
 if __name__ == "__main__":
