@@ -4542,7 +4542,7 @@
 			(uuid "ec9793d0-426b-4781-aa62-fb8604aba57b")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "Q2")
 					(unit 1)
@@ -4608,7 +4608,7 @@
 			(uuid "7714903e-eded-4108-a400-cd9ee105cfb6")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "#PWR010")
 					(unit 1)
@@ -5404,7 +5404,7 @@
 			(uuid "79be090d-a6e8-44f2-bb39-01f84fd89436")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "J8")
 					(unit 1)
@@ -5773,7 +5773,7 @@
 			(uuid "be1f6a39-efa5-408c-ad23-f2b75b537376")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "#PWR013")
 					(unit 1)
@@ -5843,7 +5843,7 @@
 			(uuid "d19c198e-87f3-4c24-a66e-e3b6f9d0de80")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "SW2")
 					(unit 1)
@@ -6496,6 +6496,73 @@
 	)
 	(symbol
 		(lib_id "power:+3.3V")
+		(at 66.04 54.61 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "ab64f0ff-579b-4262-b018-740b5cb6c79b")
+		(property "Reference" "#PWR017"
+			(at 69.85 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 62.23 54.6099 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 66.04 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 66.04 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 66.04 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "0b1a1d14-cbad-43f2-8c18-88e7c5d0636d")
+		)
+		(instances
+			(project "slot-rs232-pi-hat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
+					(reference "#PWR017")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
 		(at 80.01 44.45 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -6631,7 +6698,7 @@
 			(uuid "a8451aca-5911-4dde-8fb5-2f3661dffc87")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "C1")
 					(unit 1)
@@ -6731,7 +6798,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" "LED_SMD:LED_0603_1608Metric"
+		(property "Footprint" "LED_SMD:LED_0402_1005Metric"
 			(at 161.29 67.31 0)
 			(effects
 				(font
@@ -6933,7 +7000,7 @@
 			(uuid "7ab9f84a-b054-45a8-bde2-d17f00923c6c")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "Y2")
 					(unit 1)
@@ -7400,7 +7467,7 @@
 			(uuid "3258a0c2-ddc3-4195-8e2e-1e7e3c03c9b4")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "R7")
 					(unit 1)
@@ -7505,75 +7572,9 @@
 			(uuid "d75af780-e614-45fd-b3e6-84c355023fad")
 		)
 		(instances
-			(project ""
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
-					(reference "J10")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+3.3V")
-		(at 190.5 100.33 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "da8b552c-0f48-4194-8e6d-ddad99bf89e6")
-		(property "Reference" "#PWR023"
-			(at 190.5 104.14 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+3.3V"
-			(at 190.5 95.25 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 190.5 100.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 190.5 100.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
-			(at 190.5 100.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "be228b09-8e4e-4008-8639-a612ec2bd87f")
-		)
-		(instances
 			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
-					(reference "#PWR023")
+					(reference "J10")
 					(unit 1)
 				)
 			)
@@ -7706,73 +7707,6 @@
 			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "#PWR020")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 66.04 54.61 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "e8de419b-7216-47ee-8033-cfb9b4509478")
-		(property "Reference" "#PWR017"
-			(at 59.69 54.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 62.23 54.6099 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" ""
-			(at 66.04 54.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 66.04 54.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 66.04 54.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "3191ad33-2a9d-4d8b-8791-f941c1a445b2")
-		)
-		(instances
-			(project "slot-rs232-pi-hat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
-					(reference "#PWR017")
 					(unit 1)
 				)
 			)
@@ -8056,7 +7990,7 @@
 			(uuid "14e89042-9f42-4bf7-b5fd-29a1399322b8")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/bf019eb6-7286-41f0-8b10-b30b6283300c"
 					(reference "#PWR012")
 					(unit 1)

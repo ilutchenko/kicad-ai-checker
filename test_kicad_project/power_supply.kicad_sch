@@ -3951,7 +3951,7 @@
 			(uuid "73795ab9-6afb-4d6b-80b5-c58001d6a575")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "#PWR05")
 					(unit 1)
@@ -4304,7 +4304,7 @@
 			(uuid "81c5bb4d-38e1-47cf-8f9e-27114f80bd1e")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "Q1")
 					(unit 1)
@@ -4460,7 +4460,7 @@
 			(uuid "ed89d6b7-0c6c-4d7d-b1b8-d35161535d50")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "D4")
 					(unit 1)
@@ -4750,7 +4750,7 @@
 			(uuid "0431561d-2bd6-48fc-a0fd-3ea59fec9b78")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "#PWR043")
 					(unit 1)
@@ -4896,7 +4896,7 @@
 			(uuid "58baeb84-ebd0-403e-a5c9-95a8254e18aa")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "C13")
 					(unit 1)
@@ -5046,7 +5046,7 @@
 			(uuid "32fae7c2-e22e-4bb8-96b3-cac133f0b1cb")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "SW1")
 					(unit 1)
@@ -5073,7 +5073,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "1.96k"
+		(property "Value" "10k"
 			(at 208.28 57.1499 0)
 			(effects
 				(font
@@ -5200,7 +5200,7 @@
 			(uuid "c6b5eedb-ddcc-4d03-b78f-1065e75b9ef6")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "L1")
 					(unit 1)
@@ -5867,7 +5867,7 @@
 			(uuid "67e28bd6-2f78-4b46-a12e-5d1114c72c00")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "C18")
 					(unit 1)
@@ -6225,7 +6225,7 @@
 			(uuid "0b178245-ca25-4fcd-a248-c76814c6a097")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "#PWR031")
 					(unit 1)
@@ -6391,7 +6391,7 @@
 			(uuid "e6522eb5-132e-4803-a2b4-47e771dda4ef")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "U4")
 					(unit 1)
@@ -6547,7 +6547,7 @@
 			(uuid "5943c9f5-ae9e-492d-b810-f2913c983325")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "C14")
 					(unit 1)
@@ -6705,7 +6705,7 @@
 			(uuid "eb153fd6-5f63-49c3-b121-61e9fa44e1e6")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "D13")
 					(unit 1)
@@ -6784,7 +6784,7 @@
 			(uuid "eaaba21c-77c5-40d6-a3c2-dc03ceccb7a7")
 		)
 		(instances
-			(project ""
+			(project "slot-rs232-pi-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/db941ee9-9dec-49e9-80b2-8ef11bdcef9f"
 					(reference "R1")
 					(unit 1)
