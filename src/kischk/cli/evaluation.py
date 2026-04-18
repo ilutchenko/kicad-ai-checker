@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from kischk.cli.check_schematic import run_main_cycle
+from kischk.cli.results_check import run_results_check
 
 
 def _log(message: str) -> None:
@@ -18,6 +19,12 @@ def run_evaluation(
     detector_prompt_path: str | Path | None = None,
     detector_model: str = "gpt-5.3-codex",
     detector_reasoning_effort: str = "xhigh",
+    results_check_prompt_path: str | Path | None = None,
+    known_mistakes_path: str | Path | None = None,
+    checker_output_path: str | Path | None = None,
+    results_check_output_path: str | Path | None = None,
+    results_check_model: str = "gpt-5.4-mini",
+    results_check_reasoning_effort: str = "medium",
 ) -> Path:
     """Run evaluation loop.
 
@@ -34,6 +41,31 @@ def run_evaluation(
         detector_prompt_path=detector_prompt_path,
         detector_model=detector_model,
         detector_reasoning_effort=detector_reasoning_effort,
+    )
+    _log("Running detector results check.")
+    resolved_known_mistakes = (
+        Path(known_mistakes_path).expanduser().resolve()
+        if known_mistakes_path is not None
+        else project_root / "known_mistakes.md"
+    )
+    resolved_checker_output = (
+        Path(checker_output_path).expanduser().resolve()
+        if checker_output_path is not None
+        else run_dir / "analisys_report.json"
+    )
+    resolved_results_check_output = (
+        Path(results_check_output_path).expanduser().resolve()
+        if results_check_output_path is not None
+        else run_dir / "analisys_report_check.json"
+    )
+    run_results_check(
+        run_dir=run_dir,
+        known_mistakes_path=resolved_known_mistakes,
+        checker_output_path=resolved_checker_output,
+        output_json_path=resolved_results_check_output,
+        prompt_path=results_check_prompt_path,
+        model=results_check_model,
+        reasoning_effort=results_check_reasoning_effort,
     )
     _log(f"Iteration 1 completed. Run directory: {run_dir}")
     _log("Evaluation loop completed.")
@@ -73,6 +105,42 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default="xhigh",
         help="Reasoning effort for detector model (default: xhigh).",
     )
+    parser.add_argument(
+        "--results-check-prompt",
+        type=Path,
+        default=None,
+        help="Path to results-check prompt template (default: prompts/results_check.md).",
+    )
+    parser.add_argument(
+        "--known-mistakes-path",
+        type=Path,
+        default=None,
+        help="Path to known mistakes file (default: <project_dir>/known_mistakes.md).",
+    )
+    parser.add_argument(
+        "--checker-output-path",
+        type=Path,
+        default=None,
+        help="Path to schematic checker output (default: <run_dir>/analisys_report.json).",
+    )
+    parser.add_argument(
+        "--results-check-output-path",
+        type=Path,
+        default=None,
+        help="Path for results-check output JSON (default: <run_dir>/analisys_report_check.json).",
+    )
+    parser.add_argument(
+        "--results-check-model",
+        type=str,
+        default="gpt-5.4-mini",
+        help="Model to use for results checker (default: gpt-5.4-mini).",
+    )
+    parser.add_argument(
+        "--results-check-reasoning-effort",
+        choices=("low", "medium", "high", "xhigh"),
+        default="medium",
+        help="Reasoning effort for results checker model (default: medium).",
+    )
     return parser
 
 
@@ -86,6 +154,12 @@ def main(argv: list[str] | None = None) -> int:
         detector_prompt_path=args.detector_prompt,
         detector_model=args.detector_model,
         detector_reasoning_effort=args.detector_reasoning_effort,
+        results_check_prompt_path=args.results_check_prompt,
+        known_mistakes_path=args.known_mistakes_path,
+        checker_output_path=args.checker_output_path,
+        results_check_output_path=args.results_check_output_path,
+        results_check_model=args.results_check_model,
+        results_check_reasoning_effort=args.results_check_reasoning_effort,
     )
     print(f"Evaluation run directory: {run_dir}")
     return 0
