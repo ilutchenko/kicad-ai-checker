@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime
 import json
 from pathlib import Path
+import sys
 
 from kischk.cli.check_schematic import run_main_cycle
 from kischk.cli.detector_prompt_editor import run_detector_prompt_editor
@@ -48,6 +49,25 @@ def _calculate_detected_total(results_check_output_path: Path) -> tuple[int, int
     return detected, total
 
 
+def _ask_user_to_continue() -> bool:
+    if not sys.stdin.isatty():
+        _log("Non-interactive stdin detected; stopping after current iteration.")
+        return False
+
+    while True:
+        try:
+            answer = input("Run evaluation one more time? [y/N]: ").strip().lower()
+        except EOFError:
+            _log("No user input available; stopping evaluation cycle.")
+            return False
+
+        if answer in ("y", "yes"):
+            return True
+        if answer in ("", "n", "no"):
+            return False
+        print("Please answer 'y' or 'n'.", flush=True)
+
+
 def run_evaluation(
     project_dir: str | Path,
     runs_root: str | Path = "artifacts/runs",
@@ -71,14 +91,11 @@ def run_evaluation(
     preprocessing_editor_reasoning_effort: str = "high",
     usage_stats_path: str | Path | None = None,
 ) -> Path:
-    """Run evaluation loop.
-
-    Current implementation runs one detect/evaluate iteration only.
-    """
+    """Run one evaluation iteration."""
     project_root = Path(project_dir).expanduser().resolve()
     runs_root_path = Path(runs_root).expanduser().resolve()
 
-    _log("Starting evaluation loop (1 iteration for now).")
+    _log("Starting evaluation iteration.")
     resolved_usage_stats_path = (
         Path(usage_stats_path).expanduser().resolve()
         if usage_stats_path is not None
@@ -159,14 +176,13 @@ def run_evaluation(
         reasoning_effort=preprocessing_editor_reasoning_effort,
         usage_stats_path=resolved_usage_stats_path,
     )
-    _log(f"Iteration 1 completed. Run directory: {run_dir}")
-    _log("Evaluation loop completed.")
+    _log(f"Evaluation iteration completed. Run directory: {run_dir}")
     return run_dir
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run detector evaluation loop (single iteration for now).",
+        description="Run detector evaluation loop.",
     )
     parser.add_argument(
         "project_dir",
@@ -300,30 +316,35 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_arg_parser()
     args = parser.parse_args(argv)
 
-    run_dir = run_evaluation(
-        project_dir=args.project_dir,
-        runs_root=args.runs_root,
-        detector_prompt_path=args.detector_prompt,
-        detector_model=args.detector_model,
-        detector_reasoning_effort=args.detector_reasoning_effort,
-        results_check_prompt_path=args.results_check_prompt,
-        known_mistakes_path=args.known_mistakes_path,
-        checker_output_path=args.checker_output_path,
-        results_check_output_path=args.results_check_output_path,
-        results_check_model=args.results_check_model,
-        results_check_reasoning_effort=args.results_check_reasoning_effort,
-        detector_prompt_editor_prompt_path=args.detector_prompt_editor_prompt,
-        current_detector_prompt_path=args.current_detector_prompt_path,
-        detector_prompt_changelog_path=args.detector_prompt_changelog_path,
-        detector_prompt_editor_model=args.detector_prompt_editor_model,
-        detector_prompt_editor_reasoning_effort=args.detector_prompt_editor_reasoning_effort,
-        preprocessing_editor_prompt_path=args.preprocessing_editor_prompt,
-        analysis_process_log_path=args.analysis_process_log_path,
-        preprocessing_editor_model=args.preprocessing_editor_model,
-        preprocessing_editor_reasoning_effort=args.preprocessing_editor_reasoning_effort,
-        usage_stats_path=args.usage_stats_path,
-    )
-    print(f"Evaluation run directory: {run_dir}")
+    while True:
+        run_dir = run_evaluation(
+            project_dir=args.project_dir,
+            runs_root=args.runs_root,
+            detector_prompt_path=args.detector_prompt,
+            detector_model=args.detector_model,
+            detector_reasoning_effort=args.detector_reasoning_effort,
+            results_check_prompt_path=args.results_check_prompt,
+            known_mistakes_path=args.known_mistakes_path,
+            checker_output_path=args.checker_output_path,
+            results_check_output_path=args.results_check_output_path,
+            results_check_model=args.results_check_model,
+            results_check_reasoning_effort=args.results_check_reasoning_effort,
+            detector_prompt_editor_prompt_path=args.detector_prompt_editor_prompt,
+            current_detector_prompt_path=args.current_detector_prompt_path,
+            detector_prompt_changelog_path=args.detector_prompt_changelog_path,
+            detector_prompt_editor_model=args.detector_prompt_editor_model,
+            detector_prompt_editor_reasoning_effort=args.detector_prompt_editor_reasoning_effort,
+            preprocessing_editor_prompt_path=args.preprocessing_editor_prompt,
+            analysis_process_log_path=args.analysis_process_log_path,
+            preprocessing_editor_model=args.preprocessing_editor_model,
+            preprocessing_editor_reasoning_effort=args.preprocessing_editor_reasoning_effort,
+            usage_stats_path=args.usage_stats_path,
+        )
+        print(f"Evaluation run directory: {run_dir}")
+
+        if not _ask_user_to_continue():
+            break
+
     return 0
 
 

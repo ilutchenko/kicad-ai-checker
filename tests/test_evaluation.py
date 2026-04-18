@@ -7,7 +7,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 import kischk.cli.evaluation as evaluation_module
-from kischk.cli.evaluation import _calculate_detected_total, run_evaluation
+from kischk.cli.evaluation import (
+    _ask_user_to_continue,
+    _calculate_detected_total,
+    run_evaluation,
+)
 
 
 class EvaluationTests(unittest.TestCase):
@@ -230,6 +234,63 @@ class EvaluationTests(unittest.TestCase):
 
             detected, total = _calculate_detected_total(output)
             self.assertEqual((detected, total), (3, 5))
+
+    def test_ask_user_to_continue_yes(self) -> None:
+        with (
+            patch("kischk.cli.evaluation.sys.stdin.isatty", return_value=True),
+            patch("builtins.input", return_value="yes"),
+        ):
+            self.assertTrue(_ask_user_to_continue())
+
+    def test_ask_user_to_continue_no(self) -> None:
+        with (
+            patch("kischk.cli.evaluation.sys.stdin.isatty", return_value=True),
+            patch("builtins.input", return_value=""),
+        ):
+            self.assertFalse(_ask_user_to_continue())
+
+    def test_ask_user_to_continue_non_interactive(self) -> None:
+        with patch("kischk.cli.evaluation.sys.stdin.isatty", return_value=False):
+            self.assertFalse(_ask_user_to_continue())
+
+    def test_main_runs_single_iteration_when_user_stops(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project_dir = Path(tmp) / "project"
+            project_dir.mkdir()
+            run_dir = Path(tmp) / "runs" / "run1"
+
+            with (
+                patch("kischk.cli.evaluation.run_evaluation", return_value=run_dir) as run_mock,
+                patch("kischk.cli.evaluation._ask_user_to_continue", return_value=False) as ask_mock,
+            ):
+                result = evaluation_module.main([str(project_dir)])
+
+        self.assertEqual(result, 0)
+        run_mock.assert_called_once()
+        ask_mock.assert_called_once()
+
+    def test_main_repeats_iteration_when_user_confirms(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project_dir = Path(tmp) / "project"
+            project_dir.mkdir()
+            run_dir1 = Path(tmp) / "runs" / "run1"
+            run_dir2 = Path(tmp) / "runs" / "run2"
+
+            with (
+                patch(
+                    "kischk.cli.evaluation.run_evaluation",
+                    side_effect=[run_dir1, run_dir2],
+                ) as run_mock,
+                patch(
+                    "kischk.cli.evaluation._ask_user_to_continue",
+                    side_effect=[True, False],
+                ) as ask_mock,
+            ):
+                result = evaluation_module.main([str(project_dir)])
+
+        self.assertEqual(result, 0)
+        self.assertEqual(run_mock.call_count, 2)
+        self.assertEqual(ask_mock.call_count, 2)
 
 
 if __name__ == "__main__":

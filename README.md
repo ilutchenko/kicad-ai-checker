@@ -197,3 +197,17 @@ Run:
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
+
+## Evaluation CLI loop
+
+Run evaluation:
+
+```bash
+PYTHONPATH=src python3 -m kischk.cli.evaluation test_kicad_project
+```
+
+Behavior:
+- runs one evaluation iteration, then asks `Run evaluation one more time? [y/N]:`
+- `y`/`yes` starts another iteration and creates a new run directory
+- default answer is `N` (stop)
+- in non-interactive mode (no TTY stdin), it stops after one iteration automatically
