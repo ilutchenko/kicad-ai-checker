@@ -122,8 +122,18 @@ def _build_detector_prompt(
     )
 
 
-def _run_detector(detector_prompt: str, run_dir: Path) -> None:
-    command = ["codex", "exec", "--cd", str(run_dir), "-"]
+def _run_detector(
+    detector_prompt: str,
+    run_dir: Path,
+    model: str | None = None,
+    reasoning_effort: str | None = None,
+) -> None:
+    command = ["codex", "exec", "--cd", str(run_dir)]
+    if model:
+        command.extend(["--model", model])
+    if reasoning_effort:
+        command.extend(["-c", f'reasoning_effort="{reasoning_effort}"'])
+    command.append("-")
     _log(f"Running detector command: {' '.join(command)}")
     _log("Streaming codex detector output:")
     proc = subprocess.run(command, input=detector_prompt, text=True)
@@ -137,6 +147,8 @@ def run_main_cycle(
     runs_root: str | Path = "artifacts/runs",
     run_detector: bool = True,
     detector_prompt_path: str | Path | None = None,
+    detector_model: str | None = None,
+    detector_reasoning_effort: str | None = None,
 ) -> Path:
     project_root = Path(project_dir).expanduser().resolve()
     runs_root_path = Path(runs_root).expanduser().resolve()
@@ -172,7 +184,12 @@ def run_main_cycle(
             datasheets_path=project_root / "datasheets",
             output_directory_path=run_dir,
         )
-        _run_detector(full_prompt, run_dir=run_dir)
+        _run_detector(
+            full_prompt,
+            run_dir=run_dir,
+            model=detector_model,
+            reasoning_effort=detector_reasoning_effort,
+        )
     else:
         _log("Detector step skipped (--skip-detector).")
 
@@ -206,6 +223,18 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip detector step and run preprocessing only.",
     )
+    parser.add_argument(
+        "--detector-model",
+        type=str,
+        default=gpt-5.3-codex,
+        help="Model to use for detector codex exec (example: gpt-5.3-codex).",
+    )
+    parser.add_argument(
+        "--detector-reasoning-effort",
+        choices=("low", "medium", "high", "xhigh"),
+        default="xhigh",
+        help="Reasoning effort for detector model.",
+    )
     return parser
 
 
@@ -218,6 +247,8 @@ def main(argv: list[str] | None = None) -> int:
         runs_root=args.runs_root,
         run_detector=not args.skip_detector,
         detector_prompt_path=args.detector_prompt,
+        detector_model=args.detector_model,
+        detector_reasoning_effort=args.detector_reasoning_effort,
     )
     print(f"Run directory: {run_dir}")
     print(f"Preprocessing output: {run_dir / 'processed_net_graph.json'}")

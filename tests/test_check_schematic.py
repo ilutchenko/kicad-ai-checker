@@ -64,6 +64,37 @@ class MainCycleTests(unittest.TestCase):
                 prompt_text,
             )
             self.assertIn(f"output directory path: {run_dir}", prompt_text)
+            self.assertIsNone(run_detector_mock.call_args.kwargs["model"])
+            self.assertIsNone(run_detector_mock.call_args.kwargs["reasoning_effort"])
+
+    def test_detector_model_and_reasoning_are_forwarded(self) -> None:
+        project_dir = REPO_ROOT / "test_kicad_project"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            runs_root = Path(tmp) / "runs"
+            prompt_file = Path(tmp) / "detector.md"
+            prompt_file.write_text("Detector prompt template", encoding="utf-8")
+
+            with patch(
+                "kischk.cli.check_schematic._run_detector",
+            ) as run_detector_mock:
+                run_main_cycle(
+                    project_dir,
+                    runs_root=runs_root,
+                    detector_prompt_path=prompt_file,
+                    detector_model="gpt-5.3-codex",
+                    detector_reasoning_effort="xhigh",
+                )
+
+            run_detector_mock.assert_called_once()
+            self.assertEqual(
+                run_detector_mock.call_args.kwargs["model"],
+                "gpt-5.3-codex",
+            )
+            self.assertEqual(
+                run_detector_mock.call_args.kwargs["reasoning_effort"],
+                "xhigh",
+            )
 
 
 if __name__ == "__main__":
