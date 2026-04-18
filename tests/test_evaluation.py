@@ -176,7 +176,33 @@ class EvaluationTests(unittest.TestCase):
                 reasoning_effort="xhigh",
             )
 
-    def test_calculate_detected_total(self) -> None:
+    def test_calculate_detected_total_from_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "analisys_report_check.json"
+            output.write_text(
+                json.dumps(
+                    {
+                        "mistakes": [
+                            {"name": "a", "detected": "true"},
+                            {"name": "b", "detected": "false"},
+                            {"name": "c", "detected": True},
+                            {"name": "d", "detected": False},
+                            {"name": "e", "detected": "TRUE"},
+                        ],
+                        "summary": {
+                            "total": 9,
+                            "detected": 4,
+                            "missed": 5,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            detected, total = _calculate_detected_total(output)
+            self.assertEqual((detected, total), (4, 9))
+
+    def test_calculate_detected_total_falls_back_to_mistakes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "analisys_report_check.json"
             output.write_text(

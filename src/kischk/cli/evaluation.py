@@ -26,12 +26,19 @@ def _is_detected(value: object) -> bool:
 
 def _calculate_detected_total(results_check_output_path: Path) -> tuple[int, int]:
     payload = json.loads(results_check_output_path.read_text(encoding="utf-8"))
+    summary = payload.get("summary")
+    if isinstance(summary, dict):
+        total = summary.get("total")
+        detected = summary.get("detected")
+        if isinstance(total, int) and isinstance(detected, int):
+            return detected, total
+
     mistakes = payload.get("mistakes")
     if not isinstance(mistakes, list):
         raise ValueError(
-            f"Invalid results-check output format: {results_check_output_path} does not contain a list in 'mistakes'."
+            f"Invalid results-check output format: {results_check_output_path} "
+            "must contain either summary.total/summary.detected or a list in 'mistakes'."
         )
-
     total = len(mistakes)
     detected = sum(
         1
