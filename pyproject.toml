@@ -13,6 +13,7 @@ kischk-main-cycle = "kischk.cli.check_schematic:main"
 kischk-evaluation = "kischk.cli.evaluation:main"
 kischk-results-check = "kischk.cli.results_check:main"
 kischk-detector-prompt-editor = "kischk.cli.detector_prompt_editor:main"
+kischk-preprocessing-editor = "kischk.cli.preprocessing_editor:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

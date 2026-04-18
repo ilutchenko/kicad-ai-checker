@@ -61,7 +61,4 @@ After making code changes:
 3. explain which detector scripts or repeated detector actions this change eliminates or simplifies
 4. add or update tests if the repository has a test framework
 
-After your work I will run a new detection cycle and provide a new `analysis_process.md`.
-
 Here are locations of analisys_process.md file:
-

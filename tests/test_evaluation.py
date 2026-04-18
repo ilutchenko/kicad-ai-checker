@@ -24,6 +24,9 @@ class EvaluationTests(unittest.TestCase):
                 patch(
                     "kischk.cli.evaluation.run_detector_prompt_editor"
                 ) as run_detector_prompt_editor_mock,
+                patch(
+                    "kischk.cli.evaluation.run_preprocessing_editor"
+                ) as run_preprocessing_editor_mock,
                 patch("kischk.cli.evaluation._calculate_detected_total") as detected_total_mock,
             ):
                 run_main_cycle_mock.return_value = expected_run_dir
@@ -69,6 +72,12 @@ class EvaluationTests(unittest.TestCase):
                 model="gpt-5.3-codex",
                 reasoning_effort="high",
             )
+            run_preprocessing_editor_mock.assert_called_once_with(
+                analysis_process_log_path=expected_run_dir / "analysis_process.md",
+                prompt_path=None,
+                model="gpt-5.3-codex",
+                reasoning_effort="high",
+            )
 
     def test_forwards_custom_detector_and_results_check_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -88,6 +97,10 @@ class EvaluationTests(unittest.TestCase):
             current_detector_prompt_path = Path(tmp) / "detector.md"
             current_detector_prompt_path.write_text("prompt", encoding="utf-8")
             detector_prompt_changelog_path = Path(tmp) / "detector_prompt_changelog.md"
+            preprocessing_editor_prompt_path = Path(tmp) / "preprocessing_editor.md"
+            preprocessing_editor_prompt_path.write_text("prompt", encoding="utf-8")
+            analysis_process_log_path = Path(tmp) / "analysis_process.md"
+            analysis_process_log_path.write_text("log", encoding="utf-8")
 
             expected_run_dir = runs_root / "20260418_120001"
             with (
@@ -96,6 +109,9 @@ class EvaluationTests(unittest.TestCase):
                 patch(
                     "kischk.cli.evaluation.run_detector_prompt_editor"
                 ) as run_detector_prompt_editor_mock,
+                patch(
+                    "kischk.cli.evaluation.run_preprocessing_editor"
+                ) as run_preprocessing_editor_mock,
                 patch("kischk.cli.evaluation._calculate_detected_total") as detected_total_mock,
             ):
                 run_main_cycle_mock.return_value = expected_run_dir
@@ -118,6 +134,10 @@ class EvaluationTests(unittest.TestCase):
                     detector_prompt_changelog_path=detector_prompt_changelog_path,
                     detector_prompt_editor_model="gpt-5.4",
                     detector_prompt_editor_reasoning_effort="xhigh",
+                    preprocessing_editor_prompt_path=preprocessing_editor_prompt_path,
+                    analysis_process_log_path=analysis_process_log_path,
+                    preprocessing_editor_model="gpt-5.4-mini",
+                    preprocessing_editor_reasoning_effort="xhigh",
                 )
 
             run_main_cycle_mock.assert_called_once_with(
@@ -147,6 +167,12 @@ class EvaluationTests(unittest.TestCase):
                 changelog_path=detector_prompt_changelog_path.resolve(),
                 prompt_path=detector_prompt_editor_prompt_path,
                 model="gpt-5.4",
+                reasoning_effort="xhigh",
+            )
+            run_preprocessing_editor_mock.assert_called_once_with(
+                analysis_process_log_path=analysis_process_log_path.resolve(),
+                prompt_path=preprocessing_editor_prompt_path,
+                model="gpt-5.4-mini",
                 reasoning_effort="xhigh",
             )
 

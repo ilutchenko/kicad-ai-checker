@@ -7,6 +7,7 @@ from pathlib import Path
 
 from kischk.cli.check_schematic import run_main_cycle
 from kischk.cli.detector_prompt_editor import run_detector_prompt_editor
+from kischk.cli.preprocessing_editor import run_preprocessing_editor
 from kischk.cli.results_check import run_results_check
 
 
@@ -57,6 +58,10 @@ def run_evaluation(
     detector_prompt_changelog_path: str | Path | None = None,
     detector_prompt_editor_model: str = "gpt-5.3-codex",
     detector_prompt_editor_reasoning_effort: str = "high",
+    preprocessing_editor_prompt_path: str | Path | None = None,
+    analysis_process_log_path: str | Path | None = None,
+    preprocessing_editor_model: str = "gpt-5.3-codex",
+    preprocessing_editor_reasoning_effort: str = "high",
 ) -> Path:
     """Run evaluation loop.
 
@@ -122,6 +127,18 @@ def run_evaluation(
         prompt_path=detector_prompt_editor_prompt_path,
         model=detector_prompt_editor_model,
         reasoning_effort=detector_prompt_editor_reasoning_effort,
+    )
+    resolved_analysis_process_log = (
+        Path(analysis_process_log_path).expanduser().resolve()
+        if analysis_process_log_path is not None
+        else run_dir / "analysis_process.md"
+    )
+    _log("Running preprocessing editor.")
+    run_preprocessing_editor(
+        analysis_process_log_path=resolved_analysis_process_log,
+        prompt_path=preprocessing_editor_prompt_path,
+        model=preprocessing_editor_model,
+        reasoning_effort=preprocessing_editor_reasoning_effort,
     )
     _log(f"Iteration 1 completed. Run directory: {run_dir}")
     _log("Evaluation loop completed.")
@@ -227,6 +244,30 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default="high",
         help="Reasoning effort for detector prompt editor model (default: high).",
     )
+    parser.add_argument(
+        "--preprocessing-editor-prompt",
+        type=Path,
+        default=None,
+        help="Path to preprocessing editor template (default: prompts/preprocessing_editor.md).",
+    )
+    parser.add_argument(
+        "--analysis-process-log-path",
+        type=Path,
+        default=None,
+        help="Path to analysis process log (default: <run_dir>/analysis_process.md).",
+    )
+    parser.add_argument(
+        "--preprocessing-editor-model",
+        type=str,
+        default="gpt-5.3-codex",
+        help="Model to use for preprocessing editor (default: gpt-5.3-codex).",
+    )
+    parser.add_argument(
+        "--preprocessing-editor-reasoning-effort",
+        choices=("low", "medium", "high", "xhigh"),
+        default="high",
+        help="Reasoning effort for preprocessing editor model (default: high).",
+    )
     return parser
 
 
@@ -251,6 +292,10 @@ def main(argv: list[str] | None = None) -> int:
         detector_prompt_changelog_path=args.detector_prompt_changelog_path,
         detector_prompt_editor_model=args.detector_prompt_editor_model,
         detector_prompt_editor_reasoning_effort=args.detector_prompt_editor_reasoning_effort,
+        preprocessing_editor_prompt_path=args.preprocessing_editor_prompt,
+        analysis_process_log_path=args.analysis_process_log_path,
+        preprocessing_editor_model=args.preprocessing_editor_model,
+        preprocessing_editor_reasoning_effort=args.preprocessing_editor_reasoning_effort,
     )
     print(f"Evaluation run directory: {run_dir}")
     return 0
